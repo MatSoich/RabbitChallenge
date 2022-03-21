@@ -2,7 +2,7 @@
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
 # AlexNetの例
-- 最新ではないがAlex Netの例を紹介する。
+- 最新ではないがAlex Netの例を紹介する。2012年の画像コンペで２位に大差をつけて優勝
 ![kakunin](imgs/AlexNet.png) 
 - 入力には224 x 224の画像を使い、それを11x11のフィルターで畳み込み演算を行う。（多分ストライド４パディング３とか）
 - 96(or32*RGB分？)種類のフィルター結果を55 x 55で表す。更に5x5のフィルターでMaxプーリングを行う。
