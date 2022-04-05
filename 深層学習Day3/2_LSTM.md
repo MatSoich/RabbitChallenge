@@ -1,7 +1,4 @@
-<script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
-<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
-# LSTM
+ 
 - RNNの課題
   - 時間を遡れば遡るほど、勾配が消失して、長い時間の学習が困難。
     - シグモイド関数は勾配消失問題が起きやすい。
