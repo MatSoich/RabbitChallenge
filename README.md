@@ -45,7 +45,7 @@
 2. [LSTM](深層学習Day3/2_LSTM.md)
 3. [GRU](深層学習Day3/3_GRU.md)
 4. [双方向RNN](深層学習Day3/4_双方向RNN.md)
-5. [Seq2Seq](深層学習Day3/5_Seq22Seq.md)
+5. [Seq2Seq](深層学習Day3/5_Seq2Seq.md)
 6. [Word2vec](深層学習Day3/6_Word2vec.md)
 7. [Attention Mechanism](深層学習Day3/7_Attention_Mechanism.md)
 8. [VQ_VAE](深層学習Day3/8_VQ_VAE.md)
@@ -57,12 +57,14 @@
 
 深層学習Day4
 
-1. [強化学習]
-2. [AlphaGo]
-3. [軽量化・高速化技術]
-4. [応用モデル]
-5. [Transformer]
-6. [物体検知・セグメンテーション]
-7. 
+1. [強化学習](深層学習Day4/1_強化学習.md)
+2. [強化学習時例_AlphaGo](深層学習Day4/2_AlphaGo.md)
+3. [深層学習の軽量化・高速化技術](深層学習Day4/3_軽量化・高速化技術.md)
+4. [深層学習の応用技術](深層学習Day4/4_応用技術.md)
+5. [画像認識の実践-ResNet](深層学習Day4/5_ResNet.md)
+6. [画像認識の実践-EfficientNet](深層学習Day4/6_EfficientNet.md)
+7. [物体検知・セグメンテーション-概要](深層学習Day4/7_物体検知とSS解説.md)
+8.  [物体検知・セグメンテーションの実践-MASK R-CNN](深層学習Day4/8_MASK_R-CNN.md)
+9.  [物体検知・セグメンテーションの実践-Faster RCNN, YOLO](深層学習Day4/9_FCOS.md)
 
 
