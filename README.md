@@ -63,8 +63,16 @@
 4. [深層学習の応用技術](深層学習Day4/4_応用技術.md)
 5. [画像認識の実践-ResNet](深層学習Day4/5_ResNet.md)
 6. [画像認識の実践-EfficientNet](深層学習Day4/6_EfficientNet.md)
-7. [物体検知・セグメンテーション-概要](深層学習Day4/7_物体検知とSS解説.md)
-8.  [物体検知・セグメンテーションの実践-MASK R-CNN](深層学習Day4/8_MASK_R-CNN.md)
-9.  [物体検知・セグメンテーションの実践-Faster RCNN, YOLO](深層学習Day4/9_FCOS.md)
+7. [物体検知・セマンティックセグメンテーションの実践 - YOLO・SSD・FCOS・SS](深層学習Day4/7_物体検知とSS解説.md)
+8.  [インスタンスセグメンテーションの実践-MASK R-CNN](深層学習Day4/8_MASK_R-CNN.md)
+9.  [自然言語処理の実践-Transformer](深層学習Day4/9_Transformer.md)
+10. [自然言語処理の実践-BERT](深層学習Day4/10_BERT.md)
+11. [自然言語処理の実践-GPT](深層学習Day4/11_GPT.md)
+12. [音声認識の実践-概要](深層学習Day4/12_音声認識.md)
+13. [音声認識の実践-CTC](深層学習Day4/13_CTC.md)
+14. [GANの実践-DCGAN](深層学習Day4/14_DCGAN.md)
+15. [GANの実践-ConditionalGAN](深層学習Day4/15_ConditionalGAN.md)
+
+
 
 
