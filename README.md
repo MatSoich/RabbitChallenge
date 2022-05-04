@@ -71,7 +71,7 @@
 12. [音声認識の実践-概要](深層学習Day4/12_音声認識.md)
 13. [音声認識の実践-CTC](深層学習Day4/13_CTC.md)
 14. [生成モデル-GAN/DCGAN/ConditionalGAN](深層学習Day4/14_GAN.md)
-15. [生成モデル-Pix2Pix](深層学習Day4/14_GAN.md)
+15. [生成モデル-Pix2Pix](深層学習Day4/15_Pix2Pix.md)
 16. [深層強化学習-A3C](深層学習Day4/16_A3C.md)
 17. [深層学習関連研究-距離学習](深層学習Day4/17_Metric-Learning.md)
 18. [深層学習関連研究-MAML](深層学習Day4/18_MAML.md)
