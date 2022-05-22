@@ -157,11 +157,25 @@
   - ambiguous sampleは一つのピクセルが複数の領域を表す場合に起こる現象。（人と持っているテニスラケットを別々に予測したい時など）FPNを利用して、異なる大きさの物体は異なる特徴レベルで予測するようにできる。
 - ネットワークの出力
   - クラスラベルの出力
+    - H x W x C の大きさのテンソルが出力
+      - ピクセルごとに各クラスごとのスコアが出力される
   - 四次元ベクトルの出力
+    - 全てのピクセルからの四次元ベクトルを予測する。（H x W x 4）
   - ポジティブサンプルとネガティブサンプルの見分け方
+    - 中央の点x, yがラベルのボックスの中に入っていて、なおかつその位置の予測されたクラスとラベルのクラスが一致した場合、ポジティブサンプルとみなす
 - Centernessの損失関数への採用
-  - 
-
+  - どのくらいx,yの座標が物体の中央から離れているかを正規化して表している
+- 後処理（Non-Maximum-Suppression）
+  - 一番スコアが高いバウンディングボックスをまず出力とする。
+  - 次に、出力としたバウンディングボックスと他のもののIoUを計算する
+  - そして、IoUの値が閾値より低かった場合削除する
+- 損失関数
+  > \\\(\displaystyle L(\lbrace p_{x,y} \rbrace ,\lbrace t_{x,y} \rbrace) + \frac{1}{N_{pos}}\sum_{x,y} L_{xls} (p_{x,y}, c_{x,y}^*) + \frac{\lambda}{N_{pos}}\sum_{x,y} \mathbb{1}_{c_{x,y}^* > 0} L_{reg} (t_{x,y}, t_{x,y}^*)\\\)
+  - clsはfocal loss
+  - regはIOU loss
+  - posはポジティブサンプル
+- まとめ
+  - FCOSの手法は、アンカーベースの手法のデメリットを回避し、アンカーベースに匹敵もしくは超える精度を出している
 
 
 
@@ -176,11 +190,12 @@
         - ②プーリング（ストライド）
           - ①は多層化に伴う演算量やメモリの問題が常に発生するため、②が採用されることも多い。
 - Upsamplingの手法 
-  - Decnvolution
-  （画像）
+  - Deconvolution/Transposed Convolution
+![kakunin](imgs/Deconvolution.png)
   - U-Net
-  （画像）
+![kakunin](imgs/U-Net.png)
   - Unpooling
-（画像）
+![kakunin](imgs/Unpooling.png)
 - Upsampling以外で受容野を広げる方法
   - Dilated Convolution
+![kakunin](imgs/Dilated_Convolution.png)
