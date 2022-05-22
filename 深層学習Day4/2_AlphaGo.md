@@ -8,7 +8,6 @@
 # Alpha Go lee
 - Value NetとPolicy Netという２つのNNを使う。
 - Policy Netは方策関数に相当。
-![kakunin](imgs/PolicyNet.png)
 - Value Netは価値関数に相当。
 ![kakunin](imgs/ValueNet.png)
 - データは双方とも碁盤のマスの合計にあたる19 X 19のデータで、チャネルはそれぞれのんでともに４８チャンネル存在する。
