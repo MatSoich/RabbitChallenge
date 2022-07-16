@@ -1,6 +1,11 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+[フレームワーク演習] Seq2Seq
+=========
+
+
+
 # Seq2Seqの実践。
 
 - sin関数の値からcos関数の値をSeq2Seqモデルに予測させる。
@@ -20,6 +25,7 @@ plt.show()
 ![kakunin](imgs/seq2seq_1.png)
 
 - 次に用意した学習データを用いて学習を行う。
+
 ```python
 # NUM_ENC_TOKENS: 入力データの次元数
 # NUM_DEC_TOKENS: 出力データの次元数
@@ -84,6 +90,7 @@ plt.grid()
 plt.legend()
 plt.show()
 ```
+
 - ロス値が学習時と検証用で両方減っているので、順調に学習が進んでいることがわかる。
 ![kakunin](imgs/seq2seq_2.png)
 
@@ -131,5 +138,6 @@ plt.grid()
 plt.legend()
 plt.show()  
 ```
+
 - 下記の通り、正しく推測できていることがわかる。
 ![kakunin](imgs/seq2seq_3.png)
