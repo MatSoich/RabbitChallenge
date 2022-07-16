@@ -1,0 +1,10 @@
+python-mnist
+Pillow
+matplotlib
+numpy
+pandas
+sklearn
+tensorflow
+scipy
+jupyter
+keras
