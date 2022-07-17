@@ -701,11 +701,13 @@ plt.show()
 [!kakunin](./imgs/4_4_1.png
 
 
-2. Multihead Attention
+2. Scaled Dot-Product Attention & Multihead Attention
 - ソース・ターゲット注意機構と自己注意機構
 - Attentionは一般に、queryベクトルとkeyベクトルの類似度を求めて、その正規化したvalueベクトルに適用して値を取り出す処理を行う。
+- Transformerでは、Scaled Dot-Product Attentionと呼ばれるAttentionを、複数のヘッドで並列に扱うMulti-Head Attentionによって、Source-Target-AttentionとSelf-Attentionを実現する。
 
 
+```python
 class ScaledDotProductAttention(nn.Module):
     
     def __init__(self, d_model, attn_dropout=0.1):
@@ -743,3 +745,130 @@ class ScaledDotProductAttention(nn.Module):
         output = torch.bmm(attn, v)
 
         return output, attn
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, n_head, d_model, d_k, d_v, dropout=0.1):
+        """
+        :param n_head: int, ヘッド数
+        :param d_model: int, 隠れ層の次元数
+        :param d_k: int, keyベクトルの次元数
+        :param d_v: int, valueベクトルの次元数
+        :param dropout: float, ドロップアウト率
+        """
+        super(MultiHeadAttention, self).__init__()
+
+        self.n_head = n_head
+        self.d_k = d_k
+        self.d_v = d_v
+
+        # 各ヘッドごとに異なる重みで線形変換を行うための重み
+        # nn.Parameterを使うことで、Moduleのパラメータとして登録できる. TFでは更新が必要な変数はtf.Variableでラップするのでわかりやすい
+        self.w_qs = nn.Parameter(torch.empty([n_head, d_model, d_k], dtype=torch.float))
+        self.w_ks = nn.Parameter(torch.empty([n_head, d_model, d_k], dtype=torch.float))
+        self.w_vs = nn.Parameter(torch.empty([n_head, d_model, d_v], dtype=torch.float))
+        # nn.init.xavier_normal_で重みの値を初期化
+        nn.init.xavier_normal_(self.w_qs)
+        nn.init.xavier_normal_(self.w_ks)
+        nn.init.xavier_normal_(self.w_vs)
+
+        self.attention = ScaledDotProductAttention(d_model)
+        self.layer_norm = nn.LayerNorm(d_model) # 各層においてバイアスを除く活性化関数への入力を平均０、分散１に正則化
+        self.proj = nn.Linear(n_head*d_v, d_model)  # 複数ヘッド分のAttentionの結果を元のサイズに写像するための線形層
+        # nn.init.xavier_normal_で重みの値を初期化
+        nn.init.xavier_normal_(self.proj.weight)
+        
+        self.dropout = nn.Dropout(dropout)
+
+
+    def forward(self, q, k, v, attn_mask=None):
+        """
+        :param q: torch.tensor, queryベクトル, 
+            size=(batch_size, len_q, d_model)
+        :param k: torch.tensor, key, 
+            size=(batch_size, len_k, d_model)
+        :param v: torch.tensor, valueベクトル, 
+            size=(batch_size, len_v, d_model)
+        :param attn_mask: torch.tensor, Attentionに適用するマスク, 
+            size=(batch_size, len_q, len_k)
+        :return outputs: 出力ベクトル, 
+            size=(batch_size, len_q, d_model)
+        :return attns: Attention
+            size=(n_head*batch_size, len_q, len_k)
+            
+        """
+        d_k, d_v = self.d_k, self.d_v
+        n_head = self.n_head
+
+        # residual connectionのための入力 出力に入力をそのまま加算する
+        residual = q
+
+        batch_size, len_q, d_model = q.size()
+        batch_size, len_k, d_model = k.size()
+        batch_size, len_v, d_model = v.size()
+
+        # 複数ヘッド化
+        # torch.repeat または .repeatで指定したdimに沿って同じテンソルを作成
+        q_s = q.repeat(n_head, 1, 1) # (n_head*batch_size, len_q, d_model)
+        k_s = k.repeat(n_head, 1, 1) # (n_head*batch_size, len_k, d_model)
+        v_s = v.repeat(n_head, 1, 1) # (n_head*batch_size, len_v, d_model)
+        # ヘッドごとに並列計算させるために、n_headをdim=0に、batch_sizeをdim=1に寄せる
+        q_s = q_s.view(n_head, -1, d_model) # (n_head, batch_size*len_q, d_model)
+        k_s = k_s.view(n_head, -1, d_model) # (n_head, batch_size*len_k, d_model)
+        v_s = v_s.view(n_head, -1, d_model) # (n_head, batch_size*len_v, d_model)
+
+        # 各ヘッドで線形変換を並列計算(p16左側`Linear`)
+        q_s = torch.bmm(q_s, self.w_qs)  # (n_head, batch_size*len_q, d_k)
+        k_s = torch.bmm(k_s, self.w_ks)  # (n_head, batch_size*len_k, d_k)
+        v_s = torch.bmm(v_s, self.w_vs)  # (n_head, batch_size*len_v, d_v)
+        # Attentionは各バッチ各ヘッドごとに計算させるためにbatch_sizeをdim=0に寄せる
+        q_s = q_s.view(-1, len_q, d_k)   # (n_head*batch_size, len_q, d_k)
+        k_s = k_s.view(-1, len_k, d_k)   # (n_head*batch_size, len_k, d_k)
+        v_s = v_s.view(-1, len_v, d_v)   # (n_head*batch_size, len_v, d_v)
+
+        # Attentionを計算(p16.左側`Scaled Dot-Product Attention * h`)
+        outputs, attns = self.attention(q_s, k_s, v_s, attn_mask=attn_mask.repeat(n_head, 1, 1))
+
+        # 各ヘッドの結果を連結(p16左側`Concat`)
+        # torch.splitでbatch_sizeごとのn_head個のテンソルに分割
+        outputs = torch.split(outputs, batch_size, dim=0)  # (batch_size, len_q, d_model) * n_head
+        # dim=-1で連結
+        outputs = torch.cat(outputs, dim=-1)  # (batch_size, len_q, d_model*n_head)
+
+        # residual connectionのために元の大きさに写像(p16左側`Linear`)
+        outputs = self.proj(outputs)  # (batch_size, len_q, d_model)
+        outputs = self.dropout(outputs)
+        outputs = self.layer_norm(outputs + residual)
+
+        return outputs, attns
+```
+
+3. Position-Wise Feed Forward Network
+- 単語列の位置ごとに独立して処理する2層のネットワーク
+
+class PositionwiseFeedForward(nn.Module):
+    """
+    :param d_hid: int, 隠れ層1層目の次元数
+    :param d_inner_hid: int, 隠れ層2層目の次元数
+    :param dropout: float, ドロップアウト率
+    """
+    def __init__(self, d_hid, d_inner_hid, dropout=0.1):
+        super(PositionwiseFeedForward, self).__init__()
+        # window size 1のconv層を定義することでPosition wiseな全結合層を実現する.
+        self.w_1 = nn.Conv1d(d_hid, d_inner_hid, 1)
+        self.w_2 = nn.Conv1d(d_inner_hid, d_hid, 1)
+        self.layer_norm = nn.LayerNorm(d_hid)
+        self.dropout = nn.Dropout(dropout)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        """
+        :param x: torch.tensor,
+            size=(batch_size, max_length, d_hid)
+        :return: torch.tensor,
+            size=(batch_size, max_length, d_hid) 
+        """
+        residual = x
+        output = self.relu(self.w_1(x.transpose(1, 2)))
+        output = self.w_2(output).transpose(2, 1)
+        output = self.dropout(output)
+        return self.layer_norm(output + residual)
