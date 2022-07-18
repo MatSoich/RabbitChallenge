@@ -10,7 +10,7 @@
 - 2人のプレイヤーがミニマックスゲームを繰り返すと考えることができる。
   - GANでは価値関数𝑉に対し, 𝐷が最大化, 𝐺が最小化を行う
   > \\\(\displaystyle \min_g \max_d V(G,D)\\\)
-  > \\\(V(D,G) = \mathbb{E}_{x \sim P_{data}(x)} \left[ logD(x)\right] + \mathbb{E}_{z \sim P_{z}(Z)} \left[ log\left(1 - D(G(z))\right)\right]\\\))
+  > \\\(V(D,G) = \mathbb{E}_{x \sim P_{data}(x)} \left[ logD(x)\right] + \mathbb{E}_{z \sim P_{z}(Z)} \left[ log\left(1 - D(G(z))\right)\right]\\\)
   - GANの価値関数はバイナリークロスエントロピーと考えることができる。
 - 最適化方法
   - Discriminatorの更新
