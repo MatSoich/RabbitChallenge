@@ -1,6 +1,9 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+19 GCN
+=======
+
 # GCN
 - CNNとGCNの違い
   - CNNの技術をグラフ構造に応用したのがGCN
@@ -25,5 +28,3 @@
        - グラフ間でサイズと構造が変わると使い回しができなくなる。
          - のちにこの弱点を克服するためにChebnetが登場。
          - GCNが空間領域に踏み込むきっかけになっている。
-  3. GCNの計算
-     - →補助教材

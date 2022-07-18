@@ -1,6 +1,9 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+
+6 EfficientNet
+==========
 # EfficientNet
 - AlexNet以降、CNNを大規模にすることで制度を改善するアプローチが主流
   - 例えば、RESNETはRESNET18からRESNET200

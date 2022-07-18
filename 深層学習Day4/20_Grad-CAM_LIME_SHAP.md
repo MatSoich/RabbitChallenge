@@ -1,6 +1,9 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+
+20 GRAD-CAM/LIME/SHAP
+==========
 # モデルの解釈性への挑戦
 - なぜ解釈性が重要なのか
   - ディープラーニング活用の難しいことの１つは「ブラックボックス性」
@@ -64,4 +67,98 @@
 # 実践
 - 4_8_interoperability
 
+- GradCamを実装してDeepLearningの判断根拠部分を勾配情報から求めて可視化する。
 
+```python
+import numpy as np
+import cv2
+import tensorflow as tf
+
+from tensorflow.keras.applications import VGG16
+
+class GradCam:
+	def __init__(self, model):
+		self.model = model
+    # 畳み込み最終層の名前を確認するため
+		print([layer.name for layer in self.model.layers]) 
+
+	def gradcam_func(self, x, layer_name):
+		#　一枚の画像だと、バッチの次元がないので足す
+		X = x[np.newaxis, ...]
+		# 正規化
+		X = X / 255.
+
+		# 畳み込み層の最後の層の出力を受け取る
+		conv_feature = self.model.get_layer(layer_name).output
+		model = tf.keras.Model([self.model.inputs], [conv_feature, self.model.output])
+
+		# 勾配を記録するために tf.GradientTape() を使う
+		with tf.GradientTape() as tape:
+			# numpy配列を勾配を計算するためにtfの型に変換する
+			X = tf.cast(X, tf.float32)
+			conv_feature, outputs = model(X)
+
+			# どのクラスを予測したか
+			predicted_class = tf.math.argmax(outputs[0])
+			# 予測したクラスの出力を取得する
+			class_outputs = outputs[:, predicted_class]
+		# 勾配を計算する
+		grads = tape.gradient(class_outputs, conv_feature)
+  
+		print('予測クラス', predicted_class.numpy())
+  
+		# 平均を取る(GAP)
+		weights = tf.math.reduce_mean(grads, axis=(1, 2))
+		cam = conv_feature @ weights[..., tf.newaxis]
+		cam = tf.squeeze(cam)
+
+		# reluに通す
+		cam = tf.nn.relu(cam)
+		cam = cam / tf.math.reduce_max(cam)
+		# 正規化を戻す
+		cam = 255. * cam 
+
+		# numpy配列にする
+		cam = cam.numpy()
+		cam = cam.astype('uint8')
+		
+		# カラーマップを作る
+		jetcam = cv2.applyColorMap(cam, cv2.COLORMAP_JET) 
+		# BGRからRGBに変換
+		jetcam = cv2.cvtColor(jetcam, cv2.COLOR_BGR2RGB)  
+		jetcam = cv2.resize(jetcam, (224, 224))
+		jetcam = jetcam + x / 2 
+
+		return jetcam
+
+model = VGG16(weights='imagenet')
+gradcam = GradCam(model)
+image = cv2.imread('../data/interpretability_example_input.png')
+image = cv2.resize(image, (224, 224))
+cam = gradcam.gradcam_func(image, 'block5_conv3')
+
+
+if ENV_COLAB:
+    from google.colab.patches import cv2_imshow
+    cv2_imshow(image)
+    cv2_imshow(cam)
+else: # Jupyter  
+    from matplotlib import pyplot as plt
+    cv2.imshow('',image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    cv2.imwrite('../data/interpretability_example_output.png', cam)
+    cam_read = cv2.imread('../data/interpretability_example_output.png')
+    cv2.imshow('',cam_read)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()            
+
+```
+
+> 予測クラス 999
+- トイレットペーパは予測クラス999に設定されているので正しい。
+- 判断根拠を可視化した図から見ていく。
+- ちょっとトリッキーだが、この場合青くなっているトイレットペーパの穴の部分がポイントとなっていると思われるので、ここがトイレットペーパーの判断根拠と推測される。
+![kakunin](./imgs/4_8_1.png)
+- GradCamを用いたカラーマップ
+![kakunin](./imgs/4_8_2.png)

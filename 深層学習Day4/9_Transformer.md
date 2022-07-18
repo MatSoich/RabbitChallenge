@@ -1,6 +1,9 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+
+9 Transfoermer
+==========
 # Seq2Seqの実践
 - 4_3_lecture_chap1_exercise_public.ipynbで実装。
 
@@ -245,9 +248,9 @@ class DataLoader(object):
 
 ```
 
-python
-```
- 系列長がそれぞれ4,3,2の3つのサンプルからなるバッチを作成
+- 系列長がそれぞれ4,3,2の3つのサンプルからなるバッチを作成
+
+```python
 batch = [[1,2,3,4], [5,6,7], [8,9]]
 lengths = [len(sample) for sample in batch]
 print('各サンプルの系列長:', lengths)
@@ -501,27 +504,8 @@ for epoch in range(1, num_epochs+1):
 
 ```
 
-> Epoch 1: train_loss: 52.13  train_bleu: 3.39  valid_loss: 48.95  valid_bleu: 4.96
-> --------------------------------------------------------------------------------
-> Epoch 2: train_loss: 44.47  train_bleu: 7.51  valid_loss: 45.10  valid_bleu: 9.28
-> --------------------------------------------------------------------------------
-> Epoch 3: train_loss: 40.06  train_bleu: 11.45  valid_loss: 42.14  valid_bleu: 10.55
-> --------------------------------------------------------------------------------
-> Epoch 4: train_loss: 37.21  train_bleu: 14.25  valid_loss: 40.75  valid_bleu: 11.86
-> --------------------------------------------------------------------------------
-> Epoch 5: train_loss: 35.16  train_bleu: 16.30  valid_loss: 40.64  valid_bleu: 15.96
-> --------------------------------------------------------------------------------
-> Epoch 6: train_loss: 33.04  train_bleu: 19.12  valid_loss: 40.02  valid_bleu: 15.56
-> --------------------------------------------------------------------------------
-> Epoch 7: train_loss: 31.73  train_bleu: 20.73  valid_loss: 39.71  valid_bleu: 15.25
-> --------------------------------------------------------------------------------
-> Epoch 8: train_loss: 30.02  train_bleu: 23.12  valid_loss: 40.55  valid_bleu: 18.23
-> --------------------------------------------------------------------------------
-> Epoch 9: train_loss: 29.53  train_bleu: 23.88  valid_loss: 40.24  valid_bleu: 16.08
-> --------------------------------------------------------------------------------
+- 結果は以下。（最後のみ）
 > Epoch 10: train_loss: 28.01  train_bleu: 26.43  valid_loss: 40.81  valid_bleu: 18.11
-> --------------------------------------------------------------------------------
-
 
 - 学習がひとまずできたのでモデルを評価する。
 
@@ -845,6 +829,7 @@ class MultiHeadAttention(nn.Module):
 3. Position-Wise Feed Forward Network
 - 単語列の位置ごとに独立して処理する2層のネットワーク
 
+```python
 class PositionwiseFeedForward(nn.Module):
     """
     :param d_hid: int, 隠れ層1層目の次元数
@@ -872,3 +857,556 @@ class PositionwiseFeedForward(nn.Module):
         output = self.w_2(output).transpose(2, 1)
         output = self.dropout(output)
         return self.layer_norm(output + residual)
+```
+
+４。Masking
+
+- TransformerではAttentionに対して２つのマスクを定義します。
+- 一つはkey側の系列のPADトークンに対してAttentionを行わないようにするマスクです。
+- もう一つはDecoder側でSelf Attentionを行う際に、各時刻で未来の情報に対するAttentionを行わないようにするマスクです。
+
+```python
+def get_attn_padding_mask(seq_q, seq_k):
+    """
+    keyのPADに対するattentionを0にするためのマスクを作成する
+    :param seq_q: tensor, queryの系列, size=(batch_size, len_q)
+    :param seq_k: tensor, keyの系列, size=(batch_size, len_k)
+    :return pad_attn_mask: tensor, size=(batch_size, len_q, len_k)
+    """
+    batch_size, len_q = seq_q.size()
+    batch_size, len_k = seq_k.size()
+    pad_attn_mask = seq_k.data.eq(PAD).unsqueeze(1)   # (N, 1, len_k) PAD以外のidを全て0にする
+    pad_attn_mask = pad_attn_mask.expand(batch_size, len_q, len_k) # (N, len_q, len_k)
+    return pad_attn_mask
+
+_seq_q = torch.tensor([[1, 2, 3]])
+_seq_k = torch.tensor([[4, 5, 6, 7, PAD]])
+_mask = get_attn_padding_mask(_seq_q, _seq_k)  # 行がquery、列がkeyに対応し、key側がPAD(=0)の時刻だけ1で他が0の行列ができる
+print('query:\n', _seq_q)
+print('key:\n', _seq_k)
+print('mask:\n', _mask)
+
+def get_attn_subsequent_mask(seq):
+    """
+    未来の情報に対するattentionを0にするためのマスクを作成する
+    :param seq: tensor, size=(batch_size, length)
+    :return subsequent_mask: tensor, size=(batch_size, length, length)
+    """
+    attn_shape = (seq.size(1), seq.size(1))
+    # 上三角行列(diagonal=1: 対角線より上が1で下が0)
+    subsequent_mask = torch.triu(torch.ones(attn_shape, dtype=torch.uint8, device=device), diagonal=1)
+    subsequent_mask = subsequent_mask.repeat(seq.size(0), 1, 1)
+    return subsequent_mask
+
+_seq = torch.tensor([[1,2,3,4]])
+_mask = get_attn_subsequent_mask(_seq)  # 行がquery、列がkeyに対応し、queryより未来のkeyの値が1で他は0の行列ができいる
+print('seq:\n', _seq)
+print('mask:\n', _mask)
+```
+
+- モデルの定義
+
+
+```python
+class EncoderLayer(nn.Module):
+    """Encoderのブロックのクラス"""
+    def __init__(self, d_model, d_inner_hid, n_head, d_k, d_v, dropout=0.1):
+        """
+        :param d_model: int, 隠れ層の次元数
+        :param d_inner_hid: int, Position Wise Feed Forward Networkの隠れ層2層目の次元数
+        :param n_head: int,　ヘッド数
+        :param d_k: int, keyベクトルの次元数
+        :param d_v: int, valueベクトルの次元数
+        :param dropout: float, ドロップアウト率
+        """
+        super(EncoderLayer, self).__init__()
+        # Encoder内のSelf-Attention
+        self.slf_attn = MultiHeadAttention(
+            n_head, d_model, d_k, d_v, dropout=dropout)
+        # Postionwise FFN
+        self.pos_ffn = PositionwiseFeedForward(d_model, d_inner_hid, dropout=dropout)
+
+    def forward(self, enc_input, slf_attn_mask=None):
+        """
+        :param enc_input: tensor, Encoderの入力, 
+            size=(batch_size, max_length, d_model)
+        :param slf_attn_mask: tensor, Self Attentionの行列にかけるマスク, 
+            size=(batch_size, len_q, len_k)
+        :return enc_output: tensor, Encoderの出力, 
+            size=(batch_size, max_length, d_model)
+        :return enc_slf_attn: tensor, EncoderのSelf Attentionの行列, 
+            size=(n_head*batch_size, len_q, len_k)
+        """
+        # Self-Attentionのquery, key, valueにはすべてEncoderの入力（enc_input）が入る
+        enc_output, enc_slf_attn = self.slf_attn(
+            enc_input, enc_input, enc_input, attn_mask=slf_attn_mask)
+        enc_output = self.pos_ffn(enc_output)
+        return enc_output, enc_slf_attn
+
+class Encoder(nn.Module):
+    """EncoderLayerブロックからなるEncoderのクラス"""
+    def __init__(
+            self, n_src_vocab, max_length, n_layers=6, n_head=8, d_k=64, d_v=64,
+            d_word_vec=512, d_model=512, d_inner_hid=1024, dropout=0.1):
+        """
+        :param n_src_vocab: int, 入力言語の語彙数
+        :param max_length: int, 最大系列長
+        :param n_layers: int, レイヤー数
+        :param n_head: int,　ヘッド数
+        :param d_k: int, keyベクトルの次元数
+        :param d_v: int, valueベクトルの次元数
+        :param d_word_vec: int, 単語の埋め込みの次元数
+        :param d_model: int, 隠れ層の次元数
+        :param d_inner_hid: int, Position Wise Feed Forward Networkの隠れ層2層目の次元数
+        :param dropout: float, ドロップアウト率        
+        """
+        super(Encoder, self).__init__()
+
+        n_position = max_length + 1
+        self.max_length = max_length
+        self.d_model = d_model
+
+        # Positional Encodingを用いたEmbedding
+        self.position_enc = nn.Embedding(n_position, d_word_vec, padding_idx=PAD)
+        self.position_enc.weight.data = position_encoding_init(n_position, d_word_vec)
+
+        # 一般的なEmbedding
+        self.src_word_emb = nn.Embedding(n_src_vocab, d_word_vec, padding_idx=PAD)
+
+        # EncoderLayerをn_layers個積み重ねる
+        self.layer_stack = nn.ModuleList([
+            EncoderLayer(d_model, d_inner_hid, n_head, d_k, d_v, dropout=dropout)
+            for _ in range(n_layers)])
+
+    def forward(self, src_seq, src_pos):
+        """
+        :param src_seq: tensor, 入力系列, 
+            size=(batch_size, max_length)
+        :param src_pos: tensor, 入力系列の各単語の位置情報,
+            size=(batch_size, max_length)
+        :return enc_output: tensor, Encoderの最終出力, 
+            size=(batch_size, max_length, d_model)
+        :return enc_slf_attns: list, EncoderのSelf Attentionの行列のリスト
+        """
+        # 一般的な単語のEmbeddingを行う
+        enc_input = self.src_word_emb(src_seq)
+        # Positional EncodingのEmbeddingを加算する
+        enc_input += self.position_enc(src_pos)
+
+        enc_slf_attns = []
+        enc_output = enc_input
+        # key(=enc_input)のPADに対応する部分のみ1のマスクを作成
+        enc_slf_attn_mask = get_attn_padding_mask(src_seq, src_seq)
+
+        # n_layers個のEncoderLayerに入力を通す
+        for enc_layer in self.layer_stack:
+            enc_output, enc_slf_attn = enc_layer(
+                enc_output, slf_attn_mask=enc_slf_attn_mask)
+            enc_slf_attns += [enc_slf_attn]
+
+        return enc_output, enc_slf_attns
+
+class DecoderLayer(nn.Module):
+    """Decoderのブロックのクラス"""
+    def __init__(self, d_model, d_inner_hid, n_head, d_k, d_v, dropout=0.1):
+        """
+        :param d_model: int, 隠れ層の次元数
+        :param d_inner_hid: int, Position Wise Feed Forward Networkの隠れ層2層目の次元数
+        :param n_head: int,　ヘッド数
+        :param d_k: int, keyベクトルの次元数
+        :param d_v: int, valueベクトルの次元数
+        :param dropout: float, ドロップアウト率
+        """
+        super(DecoderLayer, self).__init__()
+        # Decoder内のSelf-Attention
+        self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        # Encoder-Decoder間のSource-Target Attention
+        self.enc_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        # Positionwise FFN
+        self.pos_ffn = PositionwiseFeedForward(d_model, d_inner_hid, dropout=dropout)
+
+    def forward(self, dec_input, enc_output, slf_attn_mask=None, dec_enc_attn_mask=None):
+        """
+        :param dec_input: tensor, Decoderの入力, 
+            size=(batch_size, max_length, d_model)
+        :param enc_output: tensor, Encoderの出力, 
+            size=(batch_size, max_length, d_model)
+        :param slf_attn_mask: tensor, Self Attentionの行列にかけるマスク, 
+            size=(batch_size, len_q, len_k)
+        :param dec_enc_attn_mask: tensor, Soutce-Target Attentionの行列にかけるマスク, 
+            size=(batch_size, len_q, len_k)
+        :return dec_output: tensor, Decoderの出力, 
+            size=(batch_size, max_length, d_model)
+        :return dec_slf_attn: tensor, DecoderのSelf Attentionの行列, 
+            size=(n_head*batch_size, len_q, len_k)
+        :return dec_enc_attn: tensor, DecoderのSoutce-Target Attentionの行列, 
+            size=(n_head*batch_size, len_q, len_k)
+        """
+        # Self-Attentionのquery, key, valueにはすべてDecoderの入力（dec_input）が入る
+        dec_output, dec_slf_attn = self.slf_attn(
+            dec_input, dec_input, dec_input, attn_mask=slf_attn_mask)
+        # Source-Target-AttentionのqueryにはDecoderの出力(dec_output), key, valueにはEncoderの出力（enc_output）が入る
+        dec_output, dec_enc_attn = self.enc_attn(
+            dec_output, enc_output, enc_output, attn_mask=dec_enc_attn_mask)
+        dec_output = self.pos_ffn(dec_output)
+
+        return dec_output, dec_slf_attn, dec_enc_attn
+
+class Decoder(nn.Module):
+    """DecoderLayerブロックからなるDecoderのクラス"""
+    def __init__(
+            self, n_tgt_vocab, max_length, n_layers=6, n_head=8, d_k=64, d_v=64,
+            d_word_vec=512, d_model=512, d_inner_hid=1024, dropout=0.1):
+        """
+        :param n_tgt_vocab: int, 出力言語の語彙数
+        :param max_length: int, 最大系列長
+        :param n_layers: int, レイヤー数
+        :param n_head: int,　ヘッド数
+        :param d_k: int, keyベクトルの次元数
+        :param d_v: int, valueベクトルの次元数
+        :param d_word_vec: int, 単語の埋め込みの次元数
+        :param d_model: int, 隠れ層の次元数
+        :param d_inner_hid: int, Position Wise Feed Forward Networkの隠れ層2層目の次元数
+        :param dropout: float, ドロップアウト率        
+        """
+        super(Decoder, self).__init__()
+        n_position = max_length + 1
+        self.max_length = max_length
+        self.d_model = d_model
+
+        # Positional Encodingを用いたEmbedding
+        self.position_enc = nn.Embedding(
+            n_position, d_word_vec, padding_idx=PAD)
+        self.position_enc.weight.data = position_encoding_init(n_position, d_word_vec)
+
+        # 一般的なEmbedding
+        self.tgt_word_emb = nn.Embedding(
+            n_tgt_vocab, d_word_vec, padding_idx=PAD)
+        self.dropout = nn.Dropout(dropout)
+
+        # DecoderLayerをn_layers個積み重ねる
+        self.layer_stack = nn.ModuleList([
+            DecoderLayer(d_model, d_inner_hid, n_head, d_k, d_v, dropout=dropout)
+            for _ in range(n_layers)])
+
+    def forward(self, tgt_seq, tgt_pos, src_seq, enc_output):
+        """
+        :param tgt_seq: tensor, 出力系列, 
+            size=(batch_size, max_length)
+        :param tgt_pos: tensor, 出力系列の各単語の位置情報,
+            size=(batch_size, max_length)
+        :param src_seq: tensor, 入力系列, 
+            size=(batch_size, n_src_vocab)
+        :param enc_output: tensor, Encoderの出力, 
+            size=(batch_size, max_length, d_model)
+        :return dec_output: tensor, Decoderの最終出力, 
+            size=(batch_size, max_length, d_model)
+        :return dec_slf_attns: list, DecoderのSelf Attentionの行列のリスト 
+        :return dec_slf_attns: list, DecoderのSelf Attentionの行列のリスト
+        """
+        # 一般的な単語のEmbeddingを行う
+        dec_input = self.tgt_word_emb(tgt_seq)
+        # Positional EncodingのEmbeddingを加算する
+        dec_input += self.position_enc(tgt_pos)
+
+        # Self-Attention用のマスクを作成
+        # key(=dec_input)のPADに対応する部分が1のマスクと、queryから見たkeyの未来の情報に対応する部分が1のマスクのORをとる
+        dec_slf_attn_pad_mask = get_attn_padding_mask(tgt_seq, tgt_seq)  # (N, max_length, max_length)
+        dec_slf_attn_sub_mask = get_attn_subsequent_mask(tgt_seq)  # (N, max_length, max_length)
+        dec_slf_attn_mask = torch.gt(dec_slf_attn_pad_mask + dec_slf_attn_sub_mask, 0)  # ORをとる
+
+        # key(=dec_input)のPADに対応する部分のみ1のマスクを作成
+        dec_enc_attn_pad_mask = get_attn_padding_mask(tgt_seq, src_seq)  # (N, max_length, max_length)
+
+        dec_slf_attns, dec_enc_attns = [], []
+
+        dec_output = dec_input
+        # n_layers個のDecoderLayerに入力を通す
+        for dec_layer in self.layer_stack:
+            dec_output, dec_slf_attn, dec_enc_attn = dec_layer(
+                dec_output, enc_output,
+                slf_attn_mask=dec_slf_attn_mask,
+                dec_enc_attn_mask=dec_enc_attn_pad_mask)
+
+            dec_slf_attns += [dec_slf_attn]
+            dec_enc_attns += [dec_enc_attn]
+
+        return dec_output, dec_slf_attns, dec_enc_attns
+
+class Transformer(nn.Module):
+    """Transformerのモデル全体のクラス"""
+    def __init__(
+            self, n_src_vocab, n_tgt_vocab, max_length, n_layers=6, n_head=8,
+            d_word_vec=512, d_model=512, d_inner_hid=1024, d_k=64, d_v=64,
+            dropout=0.1, proj_share_weight=True):
+        """
+        :param n_src_vocab: int, 入力言語の語彙数
+        :param n_tgt_vocab: int, 出力言語の語彙数
+        :param max_length: int, 最大系列長
+        :param n_layers: int, レイヤー数
+        :param n_head: int,　ヘッド数
+        :param d_k: int, keyベクトルの次元数
+        :param d_v: int, valueベクトルの次元数
+        :param d_word_vec: int, 単語の埋め込みの次元数
+        :param d_model: int, 隠れ層の次元数
+        :param d_inner_hid: int, Position Wise Feed Forward Networkの隠れ層2層目の次元数
+        :param dropout: float, ドロップアウト率        
+        :param proj_share_weight: bool, 出力言語の単語のEmbeddingと出力の写像で重みを共有する        
+        """
+        super(Transformer, self).__init__()
+        self.encoder = Encoder(
+            n_src_vocab, max_length, n_layers=n_layers, n_head=n_head,
+            d_word_vec=d_word_vec, d_model=d_model,
+            d_inner_hid=d_inner_hid, dropout=dropout)
+        self.decoder = Decoder(
+            n_tgt_vocab, max_length, n_layers=n_layers, n_head=n_head,
+            d_word_vec=d_word_vec, d_model=d_model,
+            d_inner_hid=d_inner_hid, dropout=dropout)
+        self.tgt_word_proj = nn.Linear(d_model, n_tgt_vocab, bias=False)
+        nn.init.xavier_normal_(self.tgt_word_proj.weight)
+        self.dropout = nn.Dropout(dropout)
+
+        assert d_model == d_word_vec  # 各モジュールの出力のサイズは揃える
+
+        if proj_share_weight:
+            # 出力言語の単語のEmbeddingと出力の写像で重みを共有する
+            assert d_model == d_word_vec
+            self.tgt_word_proj.weight = self.decoder.tgt_word_emb.weight
+
+    def get_trainable_parameters(self):
+        # Positional Encoding以外のパラメータを更新する
+        enc_freezed_param_ids = set(map(id, self.encoder.position_enc.parameters()))
+        dec_freezed_param_ids = set(map(id, self.decoder.position_enc.parameters()))
+        freezed_param_ids = enc_freezed_param_ids | dec_freezed_param_ids
+        return (p for p in self.parameters() if id(p) not in freezed_param_ids)
+
+    def forward(self, src, tgt):
+        src_seq, src_pos = src
+        tgt_seq, tgt_pos = tgt
+
+        src_seq = src_seq[:, 1:]
+        src_pos = src_pos[:, 1:]
+        tgt_seq = tgt_seq[:, :-1]
+        tgt_pos = tgt_pos[:, :-1]
+
+        enc_output, *_ = self.encoder(src_seq, src_pos)
+        dec_output, *_ = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output)
+        seq_logit = self.tgt_word_proj(dec_output)
+
+        return seq_logit
+
+```
+
+```python
+def compute_loss(batch_X, batch_Y, model, criterion, optimizer=None, is_train=True):
+    # バッチの損失を計算
+    model.train(is_train)
+    
+    pred_Y = model(batch_X, batch_Y)
+    gold = batch_Y[0][:, 1:].contiguous()
+#     gold = batch_Y[0].contiguous()
+    loss = criterion(pred_Y.view(-1, pred_Y.size(2)), gold.view(-1))
+
+    if is_train:  # 訓練時はパラメータを更新
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    gold = gold.data.cpu().numpy().tolist()
+    pred = pred_Y.max(dim=-1)[1].data.cpu().numpy().tolist()
+
+    return loss.item(), gold, pred
+
+MAX_LENGTH = 20
+batch_size = 64
+num_epochs = 15
+lr = 0.001
+ckpt_path = 'transformer.pth'
+max_length = MAX_LENGTH + 2
+
+model_args = {
+    'n_src_vocab': vocab_size_X,
+    'n_tgt_vocab': vocab_size_Y,
+    'max_length': max_length,
+    'proj_share_weight': True,
+    'd_k': 32,
+    'd_v': 32,
+    'd_model': 128,
+    'd_word_vec': 128,
+    'd_inner_hid': 256,
+    'n_layers': 3,
+    'n_head': 6,
+    'dropout': 0.1,
+}
+# DataLoaderやモデルを定義
+train_dataloader = DataLoader(
+    train_X, train_Y, batch_size
+    )
+valid_dataloader = DataLoader(
+    valid_X, valid_Y, batch_size, 
+    shuffle=False
+    )
+
+model = Transformer(**model_args).to(device)
+
+optimizer = optim.Adam(model.get_trainable_parameters(), lr=lr)
+
+criterion = nn.CrossEntropyLoss(ignore_index=PAD, size_average=False).to(device)
+
+def calc_bleu(refs, hyps):
+    """
+    BLEUスコアを計算する関数
+    :param refs: list, 参照訳。単語のリストのリスト (例： [['I', 'have', 'a', 'pen'], ...])
+    :param hyps: list, モデルの生成した訳。単語のリストのリスト (例： [['I', 'have', 'a', 'pen'], ...])
+    :return: float, BLEUスコア(0~100)
+    """
+    refs = [[ref[:ref.index(EOS)]] for ref in refs]
+    hyps = [hyp[:hyp.index(EOS)] if EOS in hyp else hyp for hyp in hyps]
+    return 100 * bleu_score.corpus_bleu(refs, hyps)
+
+# 訓練
+best_valid_bleu = 0.
+
+for epoch in range(1, num_epochs+1):
+    start = time.time()
+    train_loss = 0.
+    train_refs = []
+    train_hyps = []
+    valid_loss = 0.
+    valid_refs = []
+    valid_hyps = []
+    # train
+    for batch in train_dataloader:
+        batch_X, batch_Y = batch
+        loss, gold, pred = compute_loss(
+            batch_X, batch_Y, model, criterion, optimizer, is_train=True
+            )
+        train_loss += loss
+        train_refs += gold
+        train_hyps += pred
+    # valid
+    for batch in valid_dataloader:
+        batch_X, batch_Y = batch
+        loss, gold, pred = compute_loss(
+            batch_X, batch_Y, model, criterion, is_train=False
+            )
+        valid_loss += loss
+        valid_refs += gold
+        valid_hyps += pred
+    # 損失をサンプル数で割って正規化
+    train_loss /= len(train_dataloader.data) 
+    valid_loss /= len(valid_dataloader.data) 
+    # BLEUを計算
+    train_bleu = calc_bleu(train_refs, train_hyps)
+    valid_bleu = calc_bleu(valid_refs, valid_hyps)
+
+    # validationデータでBLEUが改善した場合にはモデルを保存
+    if valid_bleu > best_valid_bleu:
+        ckpt = model.state_dict()
+        torch.save(ckpt, ckpt_path)
+        best_valid_bleu = valid_bleu
+
+    elapsed_time = (time.time()-start) / 60
+    print('Epoch {} [{:.1f}min]: train_loss: {:5.2f}  train_bleu: {:2.2f}  valid_loss: {:5.2f}  valid_bleu: {:2.2f}'.format(
+            epoch, elapsed_time, train_loss, train_bleu, valid_loss, valid_bleu))
+    print('-'*80)
+```
+
+- 結果は以下。（最後のみ）
+> Epoch 15 [0.4min]: train_loss: 16.17  train_bleu: 37.87  valid_loss: 19.01  valid_bleu: 35.90
+
+
+```python
+def test(model, src, max_length=20):
+    # 学習済みモデルで系列を生成する
+    model.eval()
+    
+    src_seq, src_pos = src
+    batch_size = src_seq.size(0)
+    enc_output, enc_slf_attns = model.encoder(src_seq, src_pos)
+        
+    tgt_seq = torch.full([batch_size, 1], BOS, dtype=torch.long, device=device)
+    tgt_pos = torch.arange(1, dtype=torch.long, device=device)
+    tgt_pos = tgt_pos.unsqueeze(0).repeat(batch_size, 1)
+
+    # 時刻ごとに処理
+    for t in range(1, max_length+1):
+        dec_output, dec_slf_attns, dec_enc_attns = model.decoder(
+            tgt_seq, tgt_pos, src_seq, enc_output)
+        dec_output = model.tgt_word_proj(dec_output)
+        out = dec_output[:, -1, :].max(dim=-1)[1].unsqueeze(1)
+        # 自身の出力を次の時刻の入力にする
+        tgt_seq = torch.cat([tgt_seq, out], dim=-1)
+        tgt_pos = torch.arange(t+1, dtype=torch.long, device=device)
+        tgt_pos = tgt_pos.unsqueeze(0).repeat(batch_size, 1)
+
+    return tgt_seq[:, 1:], enc_slf_attns, dec_slf_attns, dec_enc_attns
+
+def ids_to_sentence(vocab, ids):
+    # IDのリストを単語のリストに変換する
+    return [vocab.id2word[_id] for _id in ids]
+
+def trim_eos(ids):
+    # IDのリストからEOS以降の単語を除外する
+    if EOS in ids:
+        return ids[:ids.index(EOS)]
+    else:
+        return ids
+
+# 学習済みモデルの読み込み
+model = Transformer(**model_args).to(device)
+ckpt = torch.load(ckpt_path)
+model.load_state_dict(ckpt)
+
+# テストデータの読み込み
+test_X = load_data('./data/dev.en')
+test_Y = load_data('./data/dev.ja')
+test_X = [sentence_to_ids(vocab_X, sentence) for sentence in test_X]
+test_Y = [sentence_to_ids(vocab_Y, sentence) for sentence in test_Y]
+
+test_dataloader = DataLoader(
+    test_X, test_Y, 1,
+    shuffle=False
+    )
+
+src, tgt = next(test_dataloader)
+
+src_ids = src[0][0].cpu().numpy()
+tgt_ids = tgt[0][0].cpu().numpy()
+
+print('src: {}'.format(' '.join(ids_to_sentence(vocab_X, src_ids[1:-1]))))
+print('tgt: {}'.format(' '.join(ids_to_sentence(vocab_Y, tgt_ids[1:-1]))))
+
+preds, enc_slf_attns, dec_slf_attns, dec_enc_attns = test(model, src)
+pred_ids = preds[0].data.cpu().numpy().tolist()
+print('out: {}'.format(' '.join(ids_to_sentence(vocab_Y, trim_eos(pred_ids)))))
+```
+
+- 結果は以下。結果自体は微妙だが、Seq2Seqの時よりは近い意味になってきている。
+> src: show your own business .
+> tgt: 自分 の 事 を しろ 。
+> out: 自分 の 仕事 を <UNK> し て い た 。
+
+
+```python
+# BLEUの評価
+test_dataloader = DataLoader(
+    test_X, test_Y, 128,
+    shuffle=False
+    )
+refs_list = []
+hyp_list = []
+
+for batch in test_dataloader:
+    batch_X, batch_Y = batch
+    preds, *_ = test(model, batch_X)
+    preds = preds.data.cpu().numpy().tolist()
+    refs = batch_Y[0].data.cpu().numpy()[:, 1:].tolist()
+    refs_list += refs
+    hyp_list += preds
+bleu = calc_bleu(refs_list, hyp_list)
+print(bleu)
+```
+
+- BLEUの評価も向上している。（まだ十分ではない。）
+> 26.430577139357066

@@ -1,6 +1,12 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+
+
+
+2 Alpha GO
+==========
+
 # Alpha GO
 - ２種類のAlpha GO
   - Alpha Go Lee
@@ -8,6 +14,7 @@
 # Alpha Go lee
 - Value NetとPolicy Netという２つのNNを使う。
 - Policy Netは方策関数に相当。
+![kakunin](imgs/Policynet.png)
 - Value Netは価値関数に相当。
 ![kakunin](imgs/ValueNet.png)
 - データは双方とも碁盤のマスの合計にあたる19 X 19のデータで、チャネルはそれぞれのんでともに４８チャンネル存在する。
@@ -35,13 +42,12 @@
    - S(N+1)とRが教師データ対とし、損失関数を平均二乗誤差とし、回帰問題として学習する。
      - mini batch size 32で5000万回実施。
    - N手までとN+1手からのPolicy Netを別々にしてある理由は、過学習を防ぐためであると論文では説明されている。
-# Alpha Go Leeのモンテカルロ木探索
-- 略
 # Alpha Go Zero
 - Alpha Go ZeroはAlpha Go Leeと以下の違いがある。
   1. 教師あり学習を一切行わず、強化学習のみで作成。
   2. 特徴量入力からヒューリスティックな要素を排除し石の配置のみ行うこととした。
   3. PolicyNetとValueNetを１つのネットワークに統合
+![kakunin](imgs/alphagozeropvnet.png)
   4. ResidualNetを導入
      - ネットワークにしショートカット構造を追加して、勾配の爆発、消失を抑える効果を狙ったもの
      - Residual Networkを使うことにより100層を超えるネットワークでの安定した学習が可能となった。
@@ -53,17 +59,14 @@
        - Network構造の工夫
          - WideResNet
          - PyramidNet
-  （画像）
+![kakunin](imgs/alphagozerornet.png)
+
   5. モンテカルロ木探索からRollOutSimulationをなくした。
-- Alpha Go ZeroのNNは以下。
-（画像）
+
+
 - 深層学習のNNで重要な基本ポイントは大体以下の４つ
   - 畳み込み
   - プーリング
   - RNN
   - アテンション
 - とその基本となる活性化関数
-# Alpha Go Zeroのモンテカルロ木探索
-- 略
-
-# 実装

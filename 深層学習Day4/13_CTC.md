@@ -1,6 +1,9 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+
+13 CTC
+==========
 # 音声認識タスク
 - 音声認識(ASR: Automatic Speech Recognition)とは、入力信号を音声特徴ベクトルに変換、その音声特徴ベクトルの系列から対応する単語列を推定するタスクです。
 - まず、入力された音声信号を認識処理にとって都合の良い表現に変換します。この処理のことを特徴量抽出と呼びます。主にフーリエ変換などが実施される。

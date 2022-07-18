@@ -1,6 +1,8 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+18 MAML
+========
 # MAML
 - MAMLのコンセプト
   - 深層学習に必要なデータの数を削減する
@@ -10,10 +12,10 @@
       - 事前学習済みモデルの全結合層のみ新しいデータで更新する。
     -  ファインチューニング
        - 事前学習済みモデルを初期値として学習を進める。
-  - MAML
-    - まずタスク共通の重みを学習し、その後その重みを前提に、各タスクの重みをファインチューニング。
-    - 更新された各重みをSGDなどでまとめて、元の共通重みを更新。
-    - 上記２ステップを繰り返す。
+    - MAML
+      - まずタスク共通の重みを学習し、その後その重みを前提に、各タスクの重みをファインチューニング。
+      - 更新された各重みをSGDなどでまとめて、元の共通重みを更新。
+      - 上記２ステップを繰り返す。
 - 課題
   - MAMLは計算量が多い
     - タスクごとの勾配計算と共通パラメータの勾配計算の2回が必要

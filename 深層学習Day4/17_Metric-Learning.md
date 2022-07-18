@@ -1,6 +1,9 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+
+17 Metric Learning
+========
 # Metric-Learning
 - ディープラーニング技術を用いた距離学習は、人物同定(Person Re-Identification)をはじめ、顔認識、画像分類、画像検索、異常検知など幅広いタスクに利用される
 - 特徴ベクトルに意味を持たせるには何らかの手法でCNNを学習する必要があります。深層距離学習はその1つの方法
@@ -29,6 +32,4 @@
   1. 学習がすぐに停滞してしまう。
      - 膨大な入力セットの組み合わせ(triplet)の内、学習に有効な入力セットを厳選する必要があります。このような入力セットの厳選の操作のことをtripletselectionやtriplet miningと言います。学習に有効な入力セットとは、triplet lossが発生するようなできるだけ「難しい入力セット」を意味します。
   2. クラス内距離がクラス間距離より小さくなることを保証しない
-     - この問題を解決するために、入力セットを3つのデータから構成するのではなく、4つのデータで構成するQuadrupt lossと呼ばれる次の損失関数が提案されていま
-
-- 
+     - この問題を解決するために、入力セットを3つのデータから構成するのではなく、4つのデータで構成するQuadrupt lossと呼ばれる次の損失関数が提案されている状況。

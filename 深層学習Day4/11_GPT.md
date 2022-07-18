@@ -1,6 +1,9 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
+11 物体検知とセマンティックセグメンテーション
+==========
+
 # GPT
 - GPT（Generative Pre-Training）
   - 2019年にOpenAIが開発した有名な事前学習モデル
@@ -60,5 +63,3 @@
 - GPTは単一方向のTransformerである
 - BERTは文の中のどの位置の単語もマスクされる可能性があり、マスクした前の単語も後ろの単語にも注目する必要がある
 - GPTは常に次の単語を予測するため、双方向ではない
-
-# 
