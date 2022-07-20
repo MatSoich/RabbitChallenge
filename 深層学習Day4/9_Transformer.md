@@ -123,7 +123,6 @@ print('valid data', valid_X[0])
 > train data ['where', 'shall', 'we', 'eat', 'tonight', '?']
 > valid data ['you', 'may', 'extend', 'your', 'stay', 'in', 'tokyo', '.']
 
-
 - データセットの各単語にIDを割り振り、単語辞書を作成。
 
 ```python
@@ -505,6 +504,7 @@ for epoch in range(1, num_epochs+1):
 ```
 
 - 結果は以下。（最後のみ）
+
 > Epoch 10: train_loss: 28.01  train_bleu: 26.43  valid_loss: 40.81  valid_bleu: 18.11
 
 - 学習がひとまずできたのでモデルを評価する。
@@ -597,8 +597,8 @@ out3: 商売 の 仕事 を し て 。 。 。
 
 ```
 
-
 # Transformer
+
 - ニューラル翻訳機構の弱点
   - 長さに対応できない
 - 対応策として考えられたのがAttention
@@ -616,10 +616,10 @@ out3: 商売 の 仕事 を し て 。 。 。
   - Encoderの入力に対してはSource Target Attentionを使用する。過去のDecoder情報の入力に対してはSelf Attentionを使用する。
 - Transformerの主要モジュール
   1. Positional Encoding
-    - RNNを用いないので単語列の語順情報を追加する必要がある
-      - 単語の位置情報をエンコード
-        - \\\(\displaystyle PE_{(pos,2i)} = sin\left(\frac{pos}{10000^{\frac{2i}{512}}}\right)\\\)
-        - \\\(\displaystyle PE_{(pos,2i+1)} = cos\left(\frac{pos}{10000^{\frac{2i}{512}}}\right)\\\)
+  - RNNを用いないので単語列の語順情報を追加する必要がある
+    - 単語の位置情報をエンコード
+      - \\\(\displaystyle PE_{(pos,2i)} = sin\left(\frac{pos}{10000^{\frac{2i}{512}}}\right)\\\)
+      - \\\(\displaystyle PE_{(pos,2i+1)} = cos\left(\frac{pos}{10000^{\frac{2i}{512}}}\right)\\\)
       - posの(ソフトな)２進数表現
   2. Scaled Dot product Attention & Multi-Head Attention
      - Scaled Dot Product Attention
@@ -628,7 +628,6 @@ out3: 商売 の 仕事 を し て 。 。 。
      - Multi-Head Attention
        - ８個のScaled Dot-Product Attentionの出力をConcat
        - それぞれのヘッドが異なる種類の情報を収集
-
   3. Positional Feed Forward Network
      - 位置情報を保持したまま順伝播させる
        - 各Attention層の出力を決定
@@ -641,6 +640,7 @@ out3: 商売 の 仕事 を し て 。 。 。
      - 未来の情報を加えてはダメなので、一部の情報をマスクする。
 
 # Transformerの実装
+
 - 4_4_lecture_chap2_exercise_public.ipynbで実装。
 - Dataloader作成までは前述のSeq2Seqの時と流れが同じなので省略
 - TransformerのモデルもEncoder-Decoderモデルの構造になっているが、Transformerでは下記の４つの構造を持つ必要があるため、それぞれ実装していく。
@@ -651,6 +651,7 @@ out3: 商売 の 仕事 を し て 。 。 。
 など、いくつかのモジュールから構成されているため、それぞれのモジュールを個別に定義していきます。
 
 1. Position Encoding
+
 - Transformerは系列の処理にRNNを使用しないので、そのままでは単語列の語順を考慮することができません。
 そのため、入力系列の埋め込み行列に単語の位置情報を埋め込むPosition Encodingを加算します。
 - Positional Encodingの各成分は、波長が$2\pi$から$10000*2\pi$に幾何学的に伸びる正弦波に対応します。
@@ -686,10 +687,10 @@ plt.show()
 
 
 2. Scaled Dot-Product Attention & Multihead Attention
+
 - ソース・ターゲット注意機構と自己注意機構
 - Attentionは一般に、queryベクトルとkeyベクトルの類似度を求めて、その正規化したvalueベクトルに適用して値を取り出す処理を行う。
 - Transformerでは、Scaled Dot-Product Attentionと呼ばれるAttentionを、複数のヘッドで並列に扱うMulti-Head Attentionによって、Source-Target-AttentionとSelf-Attentionを実現する。
-
 
 ```python
 class ScaledDotProductAttention(nn.Module):
@@ -826,7 +827,8 @@ class MultiHeadAttention(nn.Module):
         return outputs, attns
 ```
 
-3. Position-Wise Feed Forward Network
+1. Position-Wise Feed Forward Network
+
 - 単語列の位置ごとに独立して処理する2層のネットワーク
 
 ```python
@@ -905,7 +907,6 @@ print('mask:\n', _mask)
 ```
 
 - モデルの定義
-
 
 ```python
 class EncoderLayer(nn.Module):
@@ -1313,8 +1314,8 @@ for epoch in range(1, num_epochs+1):
 ```
 
 - 結果は以下。（最後のみ）
-> Epoch 15 [0.4min]: train_loss: 16.17  train_bleu: 37.87  valid_loss: 19.01  valid_bleu: 35.90
 
+> Epoch 15 [0.4min]: train_loss: 16.17  train_bleu: 37.87  valid_loss: 19.01  valid_bleu: 35.90
 
 ```python
 def test(model, src, max_length=20):
@@ -1383,10 +1384,10 @@ print('out: {}'.format(' '.join(ids_to_sentence(vocab_Y, trim_eos(pred_ids)))))
 ```
 
 - 結果は以下。結果自体は微妙だが、Seq2Seqの時よりは近い意味になってきている。
+
 > src: show your own business .
 > tgt: 自分 の 事 を しろ 。
 > out: 自分 の 仕事 を <UNK> し て い た 。
-
 
 ```python
 # BLEUの評価
@@ -1409,4 +1410,5 @@ print(bleu)
 ```
 
 - BLEUの評価も向上している。（まだ十分ではない。）
+
 > 26.430577139357066

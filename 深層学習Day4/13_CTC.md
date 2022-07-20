@@ -1,10 +1,11 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
-
 13 CTC
 ==========
+
 # 音声認識タスク
+
 - 音声認識(ASR: Automatic Speech Recognition)とは、入力信号を音声特徴ベクトルに変換、その音声特徴ベクトルの系列から対応する単語列を推定するタスクです。
 - まず、入力された音声信号を認識処理にとって都合の良い表現に変換します。この処理のことを特徴量抽出と呼びます。主にフーリエ変換などが実施される。
 - 次に、認識の部分で音声認識結果の候補の確率を計算します。（音声認識モデル）
@@ -21,6 +22,7 @@
   - その一つがCTC
 
 # CTC
+
 - End-to-Endモデルの中でも比較的初期に提案されたモデル
 - 従来手法のような隠れマルコフモデル(HMM)を使用せずにDNNだけで音響モデルを構築する手法として提案された
   - 基本的には音声のような時系列情報を扱うため、RNNやLSTMのような時系列を考慮したDNNを用いる。
@@ -44,16 +46,20 @@
 - しかし、縮約して\\\(l^* = [a; b; c]\\\)となるパスは大量にあるため、全てを愚直に計算するのは非効率。そのため実際のCTCでは、より効率的な計算方法である前向き・後ろ向きアルゴリズム(forward-backward algorithm)が用いられます。
 - 前向き確率\\\(\alpha_t(s)\\\)
   - 始点からフレームt、拡張ラベルsの頂点に到達するまでの全パスの確率の総和
-  > \\\(\displaystyle \alpha_t(s) \equiv \sum_{B(\pi_{1:t})=l^*_{1:[s/2]}} \prod_{t^\prime = 1}^t y_{\pi_{t^\prime}}^{t^\prime}\\\)
+  > \\\(\displaystyle \alpha_t(s) \equiv \sum_{B(\pi_{1:t})=l_{1:[s/2]}^*} \prod_{t^\prime = 1}^t y_{\pi_{t^\prime}}^{t^\prime}\\\)
 - 後ろ向き確率\\\(\beta_t(s)\\\)
   - フレームt、拡張ラベルsの頂点から終点まで到達する全パスの確率の総和
   > \\\(\displaystyle \beta_t(s) \equiv \sum_{B(\pi_{1:t})=l^*_{[s/2]:\|l^*\|}} \prod_{t^\prime = t}^T y_{\pi_{t^\prime}}^{t^\prime}\\\)
 - \\\(l_{i:j}\\\)は、成分iから成分jまでを持つベクトル(系列)を表しています。[]はガウス記号（中の数値の値を超えない最大の整数）を表す。
-  - \\\(B(\pi_{1:t})=l^*_{1:[s/2]}\\\)はt=4,s=4の時、「縮約するとラベル系列[a, b]となるフレーム1~4の頂点を通るパス\\\(\pi_{1:4}\\\)の集合を表している。
+- \\\(B(\pi_{1:t})=l^*_{1:[s/2]}\\\)はt=4,s=4の時、
+- 「縮約するとラベル系列[a, b]となるフレーム1~4の頂点を通るパス\\\(\pi_{1:4}\\\)の集合を表している。
 - 前向き確率と後ろ向き確率を掛け合わせて計算を実施すると、次式が導ける。
->\\\(\displaystyle P(l^*\|x) = \sum_{s=1}^{\|l^*\|} \frac{\alpha_t(s)\beta_t(s)}{y_{l_s^*}^t}\\\) (for any t) 
+
+> \\\(\displaystyle P(l^*\|x) = \sum_{s=1}^{\|l^*\|} \frac{\alpha_t(s)\beta_t(s)}{y_{l_s^*}^t}\\\) (for any t) 
+
 - つまり\\\(P(l^*\|x)\\\) そしてCTC損失関数 \\\(L_{CTC}=logP(l^*\|x)]\\\)を計算するためには、前向き確率と後ろ向き確率さえ用意すればよい。
 
 # CTCによる音声認識
+
 - シンプルな方法としてbest path decoding、よりより複雑なコーディングとして、best search decodingが考案されている。
 

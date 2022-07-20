@@ -3,7 +3,9 @@
 
 10 BERT
 ==========
+
 # BERT
+
 - Bidirectional Transformerをユニットにフルモデルで構成したモデル
 - 事前学習タスクとして、マスク単語予測タスク、隣接文判定タスクを与える
 - BERTからTransfer Learningを行った結果、8つのタスクでSOTA達成
@@ -52,9 +54,8 @@
 - 8つのNLPベンチマークタスクについて、過去最高の成果。
 
 # 実装
+
 - 4-6_BERT.ipynbを実装。
-
-
 - 環境設定
 
 ```python

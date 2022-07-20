@@ -1,10 +1,11 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
-
 15 Pix2Pix
 ===========
+
 # Pix2Pix
+
 - 役割
   - Conditional GANと同様の考え方
   - 条件としてラベルではなく画像を用いる
@@ -13,6 +14,7 @@
     - 着色していないものと着色しているもの
     - エッジ抽出したものと元画像
 - Pix2Pixの工夫点
+
 1. U-Net
    - Generatorに使用
    - 物体の位置を検出
