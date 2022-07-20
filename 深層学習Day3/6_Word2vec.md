@@ -5,6 +5,7 @@ Word2vec
 =========
 
 # Word2Vec
+
 - ニューラルネットワークを通して、単語の分散表現を獲得するための手法
   - 単語をone-hotベクトルで表現する
   - 次元数が多くメモリを大量に消費したり、似た単語の類似度を測ることができなかったりするなどの問題がある
@@ -12,14 +13,17 @@ Word2vec
   - RNN系のモデルでは通常、Word2Vecにより単語を分散表現に変換したものを入力として扱う。
 
 # 実装
+
 - LSTMのところで一度実装済みだが、簡易のものを再度実装する。
 - 前処理
-```
+
+```terminal
 curl http://public.shiroyagi.s3.amazonaws.com/latest-ja-word2vec-gensim-model.zip > latest-ja-word2vec-gensim-model.zip
 unzip latest-ja-word2vec-gensim-model.zip
 ```
 
 - gensim3.8.3を使用して実装
+
 ```python
 from gensim.models.word2vec import Word2Vec
 model_path = 'word2vec.gensim.model'
@@ -27,6 +31,7 @@ model = Word2Vec.load(model_path)
 for r in model.wv.most_similar(positive=['野球']):
     print(r)
 ```
+
 - 下記のように単語をone-hotベクトルで表現できた。
 
 > ('ソフトボール', 0.8520911931991577)

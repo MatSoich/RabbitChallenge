@@ -7,33 +7,28 @@
 
 # 3_4_spoken_digit.ipynbを実践しつつspoken_digitデータセットを例にした再起ニューラルネットワークの構築方法を学ぶ。
 
-`spoken_digit`データセットは、`mnist`の音声版。
-データの特徴は、
-
-
-*   **長さがバラバラ**の2500個の音声ファイルが入っています。
-*   それぞれの音声ファイルは、0から9の数字を読み上げたものです。
-*   5人の話者が、各数字を50回ずつ読み上げています。
-*   各音声ファイルには、対応する数字がラベルとして収録されています。
-
-データセットの読込は、`tensorflow_datasets`を使って行います。`tensorflow_datasets`は予めある程度の前処理を行ったデータを手軽にダウンロード･準備･使用することができるライブラリです。
-
-ライブラリの機能で、ダウンロードしたデータセットを、シャッフルすることや、分割することができます。
-
-ここでは、データセットの全体の、
-
-
-*   70%をトレーニング用
-*   15%を検証用
-*   15%をテスト用
-
-として分割します。
+- `spoken_digit`データセットは、`mnist`の音声版。
+- データの特徴は、
+  - **長さがバラバラ**の2500個の音声ファイルが入っています。
+  - それぞれの音声ファイルは、0から9の数字を読み上げたものです。
+  - 5人の話者が、各数字を50回ずつ読み上げています。
+  - 各音声ファイルには、対応する数字がラベルとして収録されています。
+- データセットの読込は、`tensorflow_datasets`を使って行います。`tensorflow_datasets`は予めある程度の前処理を行ったデータを手軽にダウンロード･準備･使用することができるライブラリです。
+- ライブラリの機能で、ダウンロードしたデータセットを、シャッフルすることや、分割することができます。
+- ここでは、データセットの全体の、
+  - 70%をトレーニング用
+  - 15%を検証用
+  - 15%をテスト用
+- として分割します。
 
 # 実装
+
 - 元データ表示
+
 ```python
 plt.plot(next(original_iter)['audio'])
 ```
+
 ![kakunin](imgs/spoken_digit_1.png)
 
 - 前処理
@@ -65,6 +60,7 @@ plt.plot(sample[0][0])
 ```
 
 ![kakunin](imgs/spoken_digit_2.png)
+
 - 作った音声データについて様々なモデルが適用できることを確認する。
 - まず単純な畳み込みネットワークでの実装。
 
@@ -99,12 +95,12 @@ model_1.evaluate(dataset_prep_valid)
 ```
 
 - 結果
+
 > loss / accuracy
 > 47/47 [==============================] - 0s 3ms/step - loss: 16.6344 - accuracy: 0.2107
 > [16.63435173034668, 0.21066667139530182]
 
 - 次に単純RNN
-
 
 ```python
 import tensorflow as tf
@@ -130,7 +126,9 @@ model_2.fit(
     validation_data=dataset_prep_valid,
 )
 ```
+
 - 結果
+
 > 219/219 [==============================] - 149s 679ms/step - loss: 2.3706 - accuracy: 0.1029 - val_loss: 2.3637 - val_accuracy: 0.0693
 > <keras.callbacks.History at 0x7f4bd60fb150>
 
@@ -160,7 +158,9 @@ model_3.fit(
     validation_data=dataset_prep_valid,
 )
 ```
+
 - 結果
+
 > 219/219 [==============================] - 11s 44ms/step - loss: 2.3715 - accuracy: 0.1069 - val_loss: 2.3022 - val_accuracy: 0.1387
 > <keras.callbacks.History at 0x7f4bd61e9650>
 
@@ -190,6 +190,7 @@ model_4.fit(
     validation_data=dataset_prep_valid,
 )
 ```
+
 > 219/219 [==============================] - 17s 66ms/step - loss: 2.2814 - accuracy: 0.1509 - val_loss: 2.1504 - val_accuracy: 0.2293
 > <keras.callbacks.History at 0x7f4bce706590>
 
@@ -223,6 +224,8 @@ model_5.fit(
     validation_data=dataset_prep_valid,
 )
 ```
+
 - 結果
+
 > 219/219 [==============================] - 10s 37ms/step - loss: 2.3386 - accuracy: 0.1109 - val_loss: 2.2980 - val_accuracy: 0.1387
 > <keras.callbacks.History at 0x7f4bce636390>

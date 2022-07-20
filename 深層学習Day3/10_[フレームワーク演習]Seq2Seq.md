@@ -11,7 +11,6 @@
 - sin関数の値からcos関数の値をSeq2Seqモデルに予測させる。
 - まず教師データの準備
 
-
 ```python
 x = np.linspace(-3 * np.pi, 3 * np.pi, 100)
 seq_in = np.sin(x)
@@ -22,6 +21,7 @@ plt.legend()
 plt.grid()
 plt.show()
 ```
+
 ![kakunin](imgs/seq2seq_1.png)
 
 - 次に用意した学習データを用いて学習を行う。

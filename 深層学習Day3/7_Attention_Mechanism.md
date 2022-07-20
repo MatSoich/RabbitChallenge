@@ -6,6 +6,7 @@ Attention Mechanism
 
 
 # Attention Mechanism
+
 - Seq2Seqの問題点
 - 長い表現に対応できない。
   - 長い意味をベクトルに格納しきれない。
@@ -14,6 +15,7 @@ Attention Mechanism
   - 近年評価が高い自然言語のモデルは全てAttention Mechanism
 
 # 確認テスト２８
+
 - RNNとword2vec、Seq2SeqとAttention Mechanismの違いを簡潔に述べよ。
   - RNNは時系列データを処理するのに適したニューラルネットワーク 
   - word2Vecは単語の分散表現ベクトルを得る手法
@@ -21,12 +23,14 @@ Attention Mechanism
   - Attentinon Mechanismは時系列データの中身のそれぞれの関連性について、重みをつける手法。
 
 # 確認テスト２９
+
 - Seq2SeqとHRED,HREDとVREDの違いについて簡潔に述べよ。
   - Seq2Seqは一問一答のようにある時系列データからある時系列データを作り出すネットワーク
   - HREDはSeqSeq２Seqに文脈の意味を足すことで、文脈の意味を汲み取ったENCODEとDECODEを可能にしている。
   - VHREはHREDが当たり障りのない文脈しか出さないことを修正するためにVAEの考えを取り入れて改良したもの。
 
 # 実装演習
+
 ぜろつく②の８章 Attentionの実装を実施。 
 
 ```python
@@ -94,5 +98,6 @@ plt.ylim(-0.05, 1.05)
 plt.show()
 
 ```
+
 - 結果は以下。Attentionを適用することで、２回のEPOCHで十分なAccuracyを得ることができている。
 ![kakunin](imgs/attention_result.png)
