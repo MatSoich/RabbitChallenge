@@ -1,17 +1,17 @@
 <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax:{inlineMath:[['\$','\$'],['\\(','\\)']],processEscapes:true},CommonHTML: {matchFontHeight:false}});</script>
 <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
-
-
-
 2 Alpha GO
 ==========
 
 # Alpha GO
+
 - ２種類のAlpha GO
   - Alpha Go Lee
   - Alpha Go zero
+
 # Alpha Go lee
+
 - Value NetとPolicy Netという２つのNNを使う。
 - Policy Netは方策関数に相当。
 ![kakunin](imgs/Policynet.png)
@@ -21,6 +21,7 @@
 ![kakunin](imgs/ChannelsOfPNVN.png)
 
 # Alpha GO Leeの学習ステップ
+
 1. 教師あり学習によるRollOutPolicyとPolicyNetの学習
    - RollOutPolicyは扇形の方策関数。
    - PolicyNetの千倍高速で学習を進めることができるため、探索中に高速に着手確率を出すために使用される。
@@ -42,7 +43,9 @@
    - S(N+1)とRが教師データ対とし、損失関数を平均二乗誤差とし、回帰問題として学習する。
      - mini batch size 32で5000万回実施。
    - N手までとN+1手からのPolicy Netを別々にしてある理由は、過学習を防ぐためであると論文では説明されている。
+
 # Alpha Go Zero
+
 - Alpha Go ZeroはAlpha Go Leeと以下の違いがある。
   1. 教師あり学習を一切行わず、強化学習のみで作成。
   2. 特徴量入力からヒューリスティックな要素を排除し石の配置のみ行うこととした。
@@ -62,7 +65,6 @@
 ![kakunin](imgs/alphagozerornet.png)
 
   5. モンテカルロ木探索からRollOutSimulationをなくした。
-
 
 - 深層学習のNNで重要な基本ポイントは大体以下の４つ
   - 畳み込み
